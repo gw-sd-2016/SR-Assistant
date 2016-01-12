@@ -30,14 +30,12 @@ void loop()
   if (Serial.available()) //USB
   { // If data comes in from serial monitor, send it out to XBee
  // Serial1.write(Serial.read()); //XBee/UART1/pins 0 and 1
-
+  
   }
   //just keep outputting data
-  delay(10);
+  delay(1000);
   Serial1.write("stuff");
-  delay(10);
-  Serial1.write("stuff";);
-  delay(10);
+  delay(1000);
   if (Serial1.available())   //XBee/UART1/pins 0 and 1
   { // If data comes in from XBee, send it out to serial monitor
     digitalWrite(13, HIGH);

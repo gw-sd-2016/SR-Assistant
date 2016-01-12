@@ -36,14 +36,16 @@ void loop()
   { // If data comes in from XBee, send it out to serial monitor
     digitalWrite(13, HIGH);
    // Serial.write(Serial1.read());  //Serial port
-    delay(3500);
+    delay(1000);
     digitalWrite(13, LOW);
     delay(1000);
+    
+    
   }
   
-  digitalWrite(13, HIGH);
-  delay(1000);
-  digitalWrite(13, LOW);
-  delay(1000);
+//  digitalWrite(13, HIGH);
+//  delay(1000);
+//  digitalWrite(13, LOW);
+//  delay(1000);
 }
 
