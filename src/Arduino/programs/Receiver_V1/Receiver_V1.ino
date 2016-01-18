@@ -51,8 +51,19 @@ int process()
       return 0;
   }
 
-  //if it is for us then lets read the message
+  //if it is for us then lets read the message and send to the computer
+
+  //grab the lat
   messageBuffer = readSection();
+  Serial.println(messageBuffer);
+  //grab the long
+  messageBuffer = readSection();
+  Serial.println(messageBuffer);
+  //grab the message
+  messageBuffer = readSection();
+  Serial.println(messageBuffer);
+  //we succeeded so return a good value
+  return 1;
 }
 /**
  * This will read a section of the message and return the characters
@@ -69,5 +80,13 @@ String readSection()
   }
 
   return messageBuffer;
+}
+/**
+ * Used for testing out the program and making sure everything works alright
+ */
+void testRun()
+{
+  Serial.println("Testing");
+  delay(1000);
 }
 
