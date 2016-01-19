@@ -1,15 +1,20 @@
 /**
  * This program gets the GPS coordinates from a button press
  */
-
+/*
+ Not all pins on the Leonardo support change interrupts,
+ so only the following can be used for RX:
+ 8, 9, 10, 11, 14 (MISO), 15 (SCK), 16 (MOSI).
+ */
+ #include <SoftwareSerial.h>
 #include <SoftwareSerial.h>
 #include <LiquidCrystal.h>
 #include <TinyGPS.h>
 #include <SoftwareSerial.h>
 #include <SimpleTimer.h>
- const int buttonPin = 3;
- TinyGPS gps;
-
+TinyGPS gps;
+// software serial for xbee: RX = digital pin 8, TX = digital pin 9
+SoftwareSerial portGPS(8, 9);
 static void smartdelay(unsigned long ms);
 static void print_float(float val, float invalid, int len, int prec, String infront);
 static void print_int(unsigned long val, unsigned long invalid, int len);
@@ -24,30 +29,21 @@ SimpleTimer powerTimer;//this is the timer used to count for power functions
 //These are constants that will be used with the timer to say when it should set things off
 int comTime = 1000;
 int gpsTime = 1000;
-SoftwareSerial comSerial(9, 10); // RX, TX
 LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
 
 void setup() 
 {
-  Serial.begin(115200);
-  Serial1.begin(57600);
+  Serial.begin(9600);
+//  Serial1.begin(57600);//this is the communication port for the GPS
+  portGPS.begin(57600);//this is the communication port for the Xbee
   lcd.begin(16, 2);
 }
 
 void loop() 
 {
-  //we pressed the button
-  if(buttonPin == HIGH)
-  {
+
     disCoor();//Get the GPS coordinate and print it out to the screen
-    sendCoor();//send the message out
-  }
-  else
-  {
-    
-  }
-  
-  
+    sendCoor();//send the message out  
   
 }
 /*
@@ -115,10 +111,11 @@ static void print_str(const char *str, int len)
 static void smartdelay(unsigned long ms)
 {
   unsigned long start = millis();
+  portGPS.listen();
   do 
   {
-    while (Serial1.available())
-      gps.encode(Serial1.read());
+    while (portGPS.available())
+      gps.encode(portGPS.read());
   } while (millis() - start < ms);
 }
 /**
@@ -152,19 +149,19 @@ void recSig()
   String sigRaw;
   
   //are we getting a signal?
-  if(comSerial.available())
-  {
-    sigRaw = comSerial.read();
-    //now process the information
-    //lets check and see who sent this
-    if(sigRaw.substring(0, 2) == "FD")
-    {
-      //field device sent this
-    }
-    else if(sigRaw.substring(0, 2) == "HB")
-    {
-      //The home base sent this out, so might be important!!
-    }
+//  if(comSerial.available())
+//  {
+//    sigRaw = comSerial.read();
+//    //now process the information
+//    //lets check and see who sent this
+//    if(sigRaw.substring(0, 2) == "FD")
+//    {
+//      //field device sent this
+//    }
+//    else if(sigRaw.substring(0, 2) == "HB")
+//    {
+//      //The home base sent this out, so might be important!!
+//    }
     /*
      * Signal code:
      *    HB - 001 - 344 - 'found it' - $
@@ -181,7 +178,7 @@ void recSig()
      * 4A. if not for us then ignore
      *  
      */
-  }
+//  }
 }
 /**
  * This contains all the code for monitoring power consumption
