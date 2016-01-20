@@ -30,8 +30,8 @@ void loop()
 
   if (Serial1.available())   //XBee/UART1/pins 0 and 1
   { // If data comes in from XBee, send it out to serial monitor
-    process();
-
+//    process();
+    testRun();
   }
 }
 /**
@@ -100,8 +100,12 @@ String readSection()
 */
 void testRun()
 {
+  char c;
   Serial.println("Testing");
+  c = Serial1.read();
+  Serial.println(c);
   ledBlink();
-  delay(1000);
+  
+ // delay(1000);
 }
 

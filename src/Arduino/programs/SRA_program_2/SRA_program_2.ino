@@ -34,7 +34,7 @@ LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
 void setup() 
 {
   Serial.begin(9600);
-//  Serial1.begin(57600);//this is the communication port for the GPS
+  Serial1.begin(9600);//this is the communication port for the GPS
   portGPS.begin(57600);//this is the communication port for the Xbee
   lcd.begin(16, 2);
 }
@@ -136,10 +136,8 @@ void disCoor()
  */
 void sendCoor()
 {
-//  if()
-//  {
-//    
-//  }
+  //Serial1.listen();//lets listen for stuff
+  Serial1.write("test signal");
 }
 /**
  * If we received a signal then lets do something with it
