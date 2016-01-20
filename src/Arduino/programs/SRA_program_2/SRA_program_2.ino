@@ -20,6 +20,7 @@ static void print_float(float val, float invalid, int len, int prec, String infr
 static void print_int(unsigned long val, unsigned long invalid, int len);
 static void print_date(TinyGPS &gps);
 static void print_str(const char *str, int len);
+static float return_float(float val, float invalid, int len, int prec);
 //static void disCoor();
 //static void sendCoor();
 //Space for globals
@@ -29,6 +30,7 @@ SimpleTimer powerTimer;//this is the timer used to count for power functions
 //These are constants that will be used with the timer to say when it should set things off
 int comTime = 1000;
 int gpsTime = 1000;
+String ID = "DEFAULT";
 LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
 
 void setup() 
@@ -74,6 +76,35 @@ static void print_float(float val, float invalid, int len, int prec, String infr
       Serial.print(' ');
   }
   smartdelay(0);
+}
+/**
+ * Similar to print_float except that it will simply return the value
+ * read
+ */
+static float return_float(float val, float invalid, int len, int prec)
+{
+  if (val == invalid)
+  {
+    while (len-- > 1)
+    {
+  //    Serial.print('*');
+    }
+  //  Serial.print(' ');
+    return -1;
+  }
+  else
+  {
+    int vi = abs((int)val);
+    int flen = prec + (val < 0.0 ? 2 : 1); // . and -
+    flen += vi >= 1000 ? 4 : vi >= 100 ? 3 : vi >= 10 ? 2 : 1;
+    for (int i=flen; i<len; ++i)
+    {
+      //Serial.print(' ');
+    }
+    return val;
+  }
+  smartdelay(0);
+  return -1;
 }
 /**
  * Prints out gps information in int form
@@ -124,7 +155,7 @@ static void smartdelay(unsigned long ms)
 void disCoor()
 {
   gps.f_get_position(&flat, &flon, &age);//get gps coordinates
-  Serial.println();
+  lcd.clear();
   lcd.setCursor(0, 0);//start at the top
   print_float(flat, TinyGPS::GPS_INVALID_F_ANGLE, 10, 6, "Lat:");//print to USB and screen
   lcd.setCursor(0,1);//start at the bottom
@@ -132,12 +163,24 @@ void disCoor()
   smartdelay(1000);
 }
 /**
- * Sends the information 
+ * Sends the information through the xbee
  */
 void sendCoor()
 {
-  //Serial1.listen();//lets listen for stuff
-  Serial1.write("test signal");
+  String delim = "*";
+  String message = "NO MESSAGE IS HERE AT THIS TIME";
+  float tlat = return_float(flat, TinyGPS::GPS_INVALID_F_ANGLE, 11, 6);//get the lon
+  float tlon = return_float(flon, TinyGPS::GPS_INVALID_F_ANGLE, 10, 6);//get the lat
+  //lets test and see if we got back actual inforamtion or not
+  if((tlat != -1) && (tlon != -1))
+  {
+    message = "lat:"+ (String)tlat + delim + "lon:" + (String)tlon; 
+   // Serial.println(message);
+  }
+  //no matter what lets add the id number to the front of the message
+  message = ID + delim + message + "&";
+  Serial.println(message);
+  Serial1.print(message);
 }
 /**
  * If we received a signal then lets do something with it

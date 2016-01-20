@@ -40,9 +40,9 @@ void loop()
 void ledBlink()
 {
   digitalWrite(13, HIGH);   // turn the LED on (HIGH is the voltage level)
-  delay(100);              // wait for a second
+  delay(10);              // wait for a second
   digitalWrite(13, LOW);    // turn the LED off by making the voltage LOW
-  delay(100);  
+  delay(10);  
 }
 /**
    Used to process the incoming information and do something useful with it
@@ -101,11 +101,18 @@ String readSection()
 void testRun()
 {
   char c;
-  Serial.println("Testing");
+  //Serial.println("Testing");
   c = Serial1.read();
-  Serial.println(c);
-  ledBlink();
-  
+  if(c == '&')
+  {
+    Serial.println("");
+    Serial.println("---------");
+  }
+  else
+  {
+    Serial.print(c);
+  }
+//  ledBlink();
  // delay(1000);
 }
 
