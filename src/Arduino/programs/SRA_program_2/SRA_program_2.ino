@@ -11,7 +11,6 @@
 #include <LiquidCrystal.h>
 #include <TinyGPS.h>
 #include <SoftwareSerial.h>
-#include <SimpleTimer.h>
 TinyGPS gps;
 // software serial for xbee: RX = digital pin 8, TX = digital pin 9
 SoftwareSerial portGPS(8, 9);
@@ -26,16 +25,22 @@ static float return_float(float val, float invalid, int len, int prec);
 //Space for globals
 float flat, flon;
 unsigned long age, date, time, chars = 0;
-SimpleTimer powerTimer;//this is the timer used to count for power functions
 //These are constants that will be used with the timer to say when it should set things off
-int comTime = 1000;
-int gpsTime = 1000;
+unsigned long lastCheckTm = 0;//used to keep track of the last tine we did a full check in
+unsigned long currCheckTm = 0;
+unsigned long lastFindTm = 0;//used to keep track of the last tine we just got GPS to give to user
+unsigned long currFindTm = 0;
+int checkInTotal = 0; //used to keep track of the total number of times we check in
+int findTotal = 0;//used to keep track of the total times we just got a signal
+boolean isGPSOn = true;//is the GPS on
+boolean isLCDOn = true;//is the LCD on
+boolean isRadOn = true;//is the radio on
 String ID = "DEFAULT";
 LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
 
 void setup() 
 {
-  Serial.begin(9600);
+  Serial.begin(9600);//Communication for the 
   Serial1.begin(9600);//this is the communication port for the GPS
   portGPS.begin(57600);//this is the communication port for the Xbee
   lcd.begin(16, 2);
@@ -43,10 +48,25 @@ void setup()
 
 void loop() 
 {
-
-    disCoor();//Get the GPS coordinate and print it out to the screen
-    sendCoor();//send the message out  
-  
+    checkIn();
+    checkPower();//check out power consumption
+}
+/**
+ * This is used for debugging purposes and displays
+ * information about certain events to either the LCD or the
+ * serial monitor when connected to a computer
+ */
+void showDebugInfo()
+{
+  Serial.println("##DEBUG##");
+  Serial.println("~Components on:");
+  Serial.print("GPS: ");
+  Serial.println(isGPSOn);
+  Serial.print("LCD: ");
+  Serial.println(isLCDOn);
+  Serial.print("Radio: ");
+  Serial.println(isRadOn);
+  Serial.println("~~~");
 }
 /*
  * Prints out the float value to a connected
@@ -182,6 +202,26 @@ void sendCoor()
   Serial.println(message);
   Serial1.print(message);
 }
+
+/**
+ * This will display the information to the LCD screen
+ * and send tht information through the radio
+ */
+ void checkIn()
+ {
+    disCoor();
+    sendCoor();
+    currCheckTm = millis();
+ }
+/**
+ * This will only get the GPS location and
+ * display that information to the user
+ */
+void simpleFind()
+{
+  disCoor();
+  currFindTm = millis();
+}
 /**
  * If we received a signal then lets do something with it
  */
@@ -222,14 +262,52 @@ void recSig()
 //  }
 }
 /**
- * This contains all the code for monitoring power consumption
- * it is called every time we do something by the function that did it
+ * This is called at the loop and checks the power consumption to see if
+ * we need to take power saving actions
  */
-void powerMonitor(int who)
+void checkPower()
 {
-  //These are used to keep track of how many times we have used something
-  int numSend;
-  int numRec;
-  int numGPS;
+  //These are times when we will activate specific power saving functions
+  checkpwCT();
+
+  //lets check when we last only found the GPS signal
+  checkpwFT();
+}
+/**
+ * Only does logic for when we last checked in
+ */
+void checkpwCT()
+{
+  unsigned long pwRateA = 0;
+  unsigned long pwRateB = 0;
+  unsigned long pwRateC = 0;
+  //lets check when we last checked in
+  if((currCheckTm - lastCheckTm) == pwRateA)
+  {
+    pwSaveA();
+  }
+  else if((currCheckTm - lastCheckTm) == pwRateB)
+  {
+    pwSaveB();
+  }
+}
+/**
+ * Only does logic for when we only got the GPS
+ * for the user
+ */
+void checkpwFT()
+{
+  
+}
+/**
+ * This will run algorithms for saving power
+ */
+void pwSaveA()
+{
+  
 }
 
+void pwSaveB()
+{
+  
+}
