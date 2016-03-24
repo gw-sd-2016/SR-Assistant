@@ -14,6 +14,7 @@
 TinyGPS gps;
 // software serial for xbee: RX = digital pin 8, TX = digital pin 9
 SoftwareSerial portGPS(8, 9);
+int GPSPowerPin = 6;
 static void smartdelay(unsigned long ms);
 static void print_float(float val, float invalid, int len, int prec, String infront);
 static void print_int(unsigned long val, unsigned long invalid, int len);
@@ -30,12 +31,19 @@ unsigned long lastCheckTm = 0;//used to keep track of the last tine we did a ful
 unsigned long currCheckTm = 0;
 unsigned long lastFindTm = 0;//used to keep track of the last tine we just got GPS to give to user
 unsigned long currFindTm = 0;
+unsigned long lastInterval = 0;
 int checkInTotal = 0; //used to keep track of the total number of times we check in
 int findTotal = 0;//used to keep track of the total times we just got a signal
 boolean isGPSOn = true;//is the GPS on
 boolean isLCDOn = true;//is the LCD on
 boolean isRadOn = true;//is the radio on
-String ID = "DEFAULT";
+//boolean flags that keep track of which functions are running 
+boolean enProt1F = false;
+boolean enProt2F = false; 
+
+//These are the globals for protocal 1
+int p1Counter = 0;
+String ID = "000001";
 LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
 
 void setup() 
@@ -44,6 +52,8 @@ void setup()
   Serial1.begin(9600);//this is the communication port for the GPS
   portGPS.begin(57600);//this is the communication port for the Xbee
   lcd.begin(16, 2);
+//  pinMode(GPSPowerPin, OUTPUT);
+//  digitalWrite(GPSPowerPin, HIGH);
 }
 
 void loop() 
@@ -274,22 +284,44 @@ void checkPower()
   checkpwFT();
 }
 /**
- * Only does logic for when we last checked in
+ * Does all the logic to determine which protocal would be
+ * the best protocal
  */
 void checkpwCT()
 {
-  unsigned long pwRateA = 0;
+  unsigned long interval = 0;
   unsigned long pwRateB = 0;
   unsigned long pwRateC = 0;
+  unsigned long varianceP1 = 30;
+
+
   //lets check when we last checked in
-  if((currCheckTm - lastCheckTm) == pwRateA)
+  
+  interval = currCheckTm - lastCheckTm;//how long has it been since we last checked in?
+  /**
+  *We have to add the last time we checked in and the current time together then see
+  *if they are within a threshold of say 5 minutes. This means that if the last and current
+  *check in both happened x minutes apart, +/- 5 extra minutes, then we will count it
+  *towards using protocal 1
+  */
+  if((lastInterval + interval) > 30 && //floor
+    (lastInterval + interval) < 60) //cieling
   {
-    pwSaveA();
+    p1Counter = p1Counter + 1;
+    if(p1Counter == 3)//if we checked in 3 times within threshold
+    {
+      enProtocal1(interval);//activate the protocal and go with the floor
+    }
   }
-  else if((currCheckTm - lastCheckTm) == pwRateB)
+  else
   {
-    pwSaveB();
+    p1Counter = p1Counter -1;
+    if(p1Counter < 0)
+    {
+      p1Counter = 0;
+    }
   }
+  lastInterval = interval;
 }
 /**
  * Only does logic for when we only got the GPS
@@ -300,14 +332,42 @@ void checkpwFT()
   
 }
 /**
- * This will run algorithms for saving power
+ * This will set all the flags for the
+ * energy protocals to false
  */
-void pwSaveA()
+void defFlags()
 {
   
 }
 
-void pwSaveB()
+/**
+ * Protocal 1 will deal with regular check ins.
+ * It will shut down all parts, and then turn them on
+ * 5 minutes before we want to use them
+ */
+int enProtocal1(unsigned long interval)
+{
+  //is this already on?
+  if(enProt1F)
+  {
+    return 1;
+  }
+  else
+  {
+    //we need to shut off the GPS, radio, and LCD screen.
+    //turn off LCD
+    lcd.noDisplay();
+    //to make the bee sleep, need to configure it properly to allow for sleep
+    //then need to set pin 9 to high and it will then sleep
+
+    //for GPS need to set it up to be connected to a specific pin, then have that pin go low
+    //in order to save power
+  }
+}
+/**
+ * 
+ */
+int enProtocal2()
 {
   
 }
