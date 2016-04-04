@@ -11,21 +11,25 @@
 #include <LiquidCrystal.h>
 #include <TinyGPS.h>
 #include <SoftwareSerial.h>
-TinyGPS gps;
-// software serial for xbee: RX = digital pin 8, TX = digital pin 9
-SoftwareSerial portGPS(8, 9);
-int GPSPowerPin = 6;
+
 static void smartdelay(unsigned long ms);
 static void print_float(float val, float invalid, int len, int prec, String infront);
 static void print_int(unsigned long val, unsigned long invalid, int len);
 static void print_date(TinyGPS &gps);
 static void print_str(const char *str, int len);
 static float return_float(float val, float invalid, int len, int prec);
-//static void disCoor();
-//static void sendCoor();
+
+TinyGPS gps;
+// software serial for xbee: RX = digital pin 8, TX = digital pin 9
+
 //Space for globals
+SoftwareSerial portGPS(8, 9);
+LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
+//int GPSPowerPin = 13;
+int RadPowerPin = 10;
 float flat, flon;
 unsigned long age, date, time, chars = 0;
+
 //These are constants that will be used with the timer to say when it should set things off
 unsigned long lastCheckTm = 0;//used to keep track of the last tine we did a full check in
 unsigned long currCheckTm = 0;
@@ -43,17 +47,18 @@ boolean enProt2F = false;
 
 //These are the globals for protocal 1
 int p1Counter = 0;
+//int buttonAPin = 6;
+//int buttonBPin = 7;
 String ID = "000001";
-LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
+
 
 void setup() 
 {
   Serial.begin(9600);//Communication for the 
-  Serial1.begin(9600);//this is the communication port for the GPS
-  portGPS.begin(57600);//this is the communication port for the Xbee
+  Serial1.begin(9600);//this is the communication port for the XBee
+  portGPS.begin(57600);
   lcd.begin(16, 2);
-//  pinMode(GPSPowerPin, OUTPUT);
-//  digitalWrite(GPSPowerPin, HIGH);
+  portGPS.print("$PMTK104*37");
 }
 
 void loop() 
@@ -357,11 +362,11 @@ int enProtocal1(unsigned long interval)
     //we need to shut off the GPS, radio, and LCD screen.
     //turn off LCD
     lcd.noDisplay();
-    //to make the bee sleep, need to configure it properly to allow for sleep
-    //then need to set pin 9 to high and it will then sleep
+    //turn off the GPS
+    //digitalWrite(GPSPowerPin, LOW);
+    //set the radio to sleep
+    digitalWrite(RadPowerPin, HIGH);
 
-    //for GPS need to set it up to be connected to a specific pin, then have that pin go low
-    //in order to save power
   }
 }
 /**
