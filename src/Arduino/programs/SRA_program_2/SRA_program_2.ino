@@ -5,6 +5,8 @@
  Not all pins on the Leonardo support change interrupts,
  so only the following can be used for RX:
  8, 9, 10, 11, 14 (MISO), 15 (SCK), 16 (MOSI).
+
+ Currently free pins: 7, 10
  */
  #include <SoftwareSerial.h>
 #include <SoftwareSerial.h>
@@ -25,8 +27,8 @@ TinyGPS gps;
 //Space for globals
 SoftwareSerial portGPS(8, 9);
 LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
-//int GPSPowerPin = 13;
-int RadPowerPin = 10;
+//int GPSPowerPin = --;
+// RadPowerPin = 10;
 float flat, flon;
 unsigned long age, date, time, chars = 0;
 
@@ -47,8 +49,6 @@ boolean enProt2F = false;
 
 //These are the globals for protocal 1
 int p1Counter = 0;
-//int buttonAPin = 6;
-//int buttonBPin = 7;
 String ID = "000001";
 
 
@@ -58,30 +58,53 @@ void setup()
   Serial1.begin(9600);//this is the communication port for the XBee
   portGPS.begin(57600);
   lcd.begin(16, 2);
-  portGPS.print("$PMTK104*37");
+ // portGPS.print("$PMTK104*37"); //code for resetting the GPS
 }
 
 void loop() 
 {
     checkIn();
     checkPower();//check out power consumption
+
+    /**
+    * Commands:
+    * 1. Get currCheckTm
+    * 2. get lastCheckTm 
+    * 3. Activate protocol 1. if its on, it will turn off
+    */
+    int compInput = readASCII();
+    if(compInput == 1) 
+    {
+      Serial.println(currCheckTm);
+    }
+    else if(compInput == 2)
+    {
+      Serial.println(lastCheckTm);
+    }
+    else if(compInput == 3)
+    {
+      Serial.println("Protocl 1");
+      enProtocal1(0);
+    }
 }
 /**
- * This is used for debugging purposes and displays
- * information about certain events to either the LCD or the
- * serial monitor when connected to a computer
- */
-void showDebugInfo()
+*This will read information from the computer
+*and returnt that information as an ASCII character
+*/
+int readASCII()
 {
-  Serial.println("##DEBUG##");
-  Serial.println("~Components on:");
-  Serial.print("GPS: ");
-  Serial.println(isGPSOn);
-  Serial.print("LCD: ");
-  Serial.println(isLCDOn);
-  Serial.print("Radio: ");
-  Serial.println(isRadOn);
-  Serial.println("~~~");
+  int incomingByte = 0;
+  int testByte = 0;
+          // send data only when you receive data:
+        if (Serial.available() > 0) {
+                // read the incoming byte:
+                incomingByte = Serial.read();
+                testByte = incomingByte - 48;
+                // say what you got:
+                Serial.print("I received: ");
+                Serial.println(testByte, DEC);
+        }
+        return testByte;
 }
 /*
  * Prints out the float value to a connected
@@ -227,6 +250,7 @@ void sendCoor()
     disCoor();
     sendCoor();
     currCheckTm = millis();
+    Serial.println(currCheckTm);//DEB
  }
 /**
  * This will only get the GPS location and
@@ -355,6 +379,8 @@ int enProtocal1(unsigned long interval)
   //is this already on?
   if(enProt1F)
   {
+    enProt1F = false;
+    lcd.display();//turn lcd on
     return 1;
   }
   else
@@ -365,8 +391,8 @@ int enProtocal1(unsigned long interval)
     //turn off the GPS
     //digitalWrite(GPSPowerPin, LOW);
     //set the radio to sleep
-    digitalWrite(RadPowerPin, HIGH);
-
+    enProt1F = true;
+    return 0;
   }
 }
 /**
