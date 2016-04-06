@@ -22,8 +22,10 @@ static void print_str(const char *str, int len);
 static float return_float(float val, float invalid, int len, int prec);
 
 TinyGPS gps;
-// software serial for xbee: RX = digital pin 8, TX = digital pin 9
+//{"$PMTK161,0*28\x0D\x0A"}; GPS command to set to standby mode. Any byte sent after will wake it up
+//
 
+// software serial for xbee: RX = digital pin 8, TX = digital pin 9
 //Space for globals
 SoftwareSerial portGPS(8, 9);
 LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
@@ -46,11 +48,13 @@ boolean isRadOn = true;//is the radio on
 //boolean flags that keep track of which functions are running 
 boolean enProt1F = false;
 boolean enProt2F = false; 
-
+int buttonPin = 6;// pin for the button
 //These are the globals for protocal 1
 int p1Counter = 0;
 String ID = "000001";
-
+int buttonState = 0;
+int LEDPin = 13;
+int xbsp = 7;
 
 void setup() 
 {
@@ -59,10 +63,20 @@ void setup()
   portGPS.begin(57600);
   lcd.begin(16, 2);
  // portGPS.print("$PMTK104*37"); //code for resetting the GPS
+ pinMode(buttonPin, INPUT);
+ pinMode(LEDPin, OUTPUT);
+ pinMode(xbsp, OUTPUT);
+ digitalWrite(xbsp, LOW);
 }
 
 void loop() 
 {
+   buttonState = digitalRead(buttonPin);
+  if (buttonState == HIGH) 
+  {
+    enProtocal1(0);
+    digitalWrite(LEDPin, HIGH);
+  } 
     checkIn();
     checkPower();//check out power consumption
 
@@ -86,6 +100,12 @@ void loop()
       Serial.println("Protocl 1");
       enProtocal1(0);
     }
+    
+   
+
+  // check if the pushbutton is pressed.
+  // if it is, the buttonState is HIGH:
+  
 }
 /**
 *This will read information from the computer
@@ -381,6 +401,8 @@ int enProtocal1(unsigned long interval)
   {
     enProt1F = false;
     lcd.display();//turn lcd on
+    portGPS.print("w");
+   // digitalWrite(xbsp, LOW);
     return 1;
   }
   else
@@ -388,9 +410,12 @@ int enProtocal1(unsigned long interval)
     //we need to shut off the GPS, radio, and LCD screen.
     //turn off LCD
     lcd.noDisplay();
-    //turn off the GPS
-    //digitalWrite(GPSPowerPin, LOW);
+    //set GPS to low power mode
+    portGPS.print("{\"$PMTK161,0*28\x0D\x0A\"}");
     //set the radio to sleep
+    //digitalWrite(xbsp, HIGH);
+
+    //Set GPS to periodic standby
     enProt1F = true;
     return 0;
   }
