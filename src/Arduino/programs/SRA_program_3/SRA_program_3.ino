@@ -54,7 +54,7 @@ int p1Counter = 0;
 String ID = "000001";
 int buttonState = 0;
 //int LEDPin = 13;
-//int xbsp = 7;
+int xbsp = 7;
 
 void setup() 
 {
@@ -64,9 +64,9 @@ void setup()
   lcd.begin(16, 2);
  // portGPS.print("$PMTK104*37"); //code for resetting the GPS
  pinMode(buttonPin, INPUT);
- //pinMode(LEDPin, OUTPUT);
-// pinMode(xbsp, OUTPUT);
- //digitalWrite(xbsp, LOW);
+// pinMode(LEDPin, OUTPUT);
+ pinMode(xbsp, OUTPUT);
+ digitalWrite(xbsp, LOW);
 }
 
 void loop() 
@@ -74,11 +74,12 @@ void loop()
    buttonState = digitalRead(buttonPin);
   if (buttonState == HIGH) 
   {
-    enProtocal1(0);
+    enProtocal2(0);
    // digitalWrite(LEDPin, HIGH);
+   checkIn();
   } 
-    checkIn();
-    checkPower();//check out power consumption
+    
+   // checkPower();//check out power consumption
 
     /**
     * Commands:
@@ -423,7 +424,29 @@ int enProtocal1(unsigned long interval)
 /**
  * 
  */
-int enProtocal2()
+int enProtocal2(int command)
 {
-  
+   //is this already on?
+  if(enProt2F)
+  {
+    enProt2F = false;
+    lcd.display();//turn lcd on
+   // portGPS.print("w");
+   digitalWrite(xbsp, LOW);
+    return 1;
+  }
+  else
+  {
+    //we need to shut off the GPS, radio, and LCD screen.
+    //turn off LCD
+    lcd.noDisplay();
+    //set GPS to low power mode
+  //  portGPS.print("{\"$PMTK161,0*28\x0D\x0A\"}");
+    //set the radio to sleep
+    digitalWrite(xbsp, HIGH);
+
+    //Set GPS to periodic standby
+    enProt2F = true;
+    return 0;
+  }
 }
