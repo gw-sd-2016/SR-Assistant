@@ -52,6 +52,7 @@ boolean enProt2F = false;
 int buttonPin = 6;// pin for the button
 //These are the globals for protocal 1
 int p1Counter = 0;
+int p2Counter = 0;
 String ID = "000001";
 int buttonState = 0;
 int xbsp = 7;
@@ -277,10 +278,11 @@ void sendCoor()
  */
  void checkIn()
  {
-    disCoor();
-    sendCoor();
-    currCheckTm = millis();
-    Serial.println(currCheckTm);//DEB
+  setAllOn();
+  disCoor();
+  sendCoor();
+  currCheckTm = millis();
+  Serial.println(currCheckTm);//DEB
  }
 /**
  * This will only get the GPS location and
@@ -288,6 +290,7 @@ void sendCoor()
  */
 void simpleFind()
 {
+  setAllOn();
   disCoor();
   currFindTm = millis();
 }
@@ -376,6 +379,7 @@ void checkpwCT()
     if(p1Counter == 3)//if we checked in 3 times within threshold
     {
       enProtocal1Start(interval);//activate the protocal and go with the floor
+      p1Counter = 0; //reset the counter
     }
   }
   else
@@ -385,11 +389,18 @@ void checkpwCT()
     {
       p1Counter = 0;
     }
-  }
-  //if p1counter is zero, then that means they were very off in checking in 3 times, so lets stop 
-  if(p1Counter == 0 && enProt1F == true)
-  {
-    enProtocal1(0);
+
+    p2Counter = p2Counter + 1;
+    if(p2Counter == 3 && enProt1F)//if we are running protocol 1 and we now have irregular checkins
+    {
+      enProt1F = false;//turn of prot1
+      enProt2F = true;
+      enProtocal2Start();
+    }
+    else if (p2Counter == 3 && !enProt1F)//if we are not running protocol 1
+    {
+      enProtocal2Start();
+    }
   }
 
   lastInterval = interval;
@@ -403,12 +414,13 @@ void checkpwFT()
   
 }
 /**
- * This will set all the flags for the
- * energy protocals to false
+ * This well set all components to be on for a checkin
  */
-void defFlags()
+void setAllOn()
 {
-  
+    lcd.display();//turn lcd on
+    portGPS.print("w");
+    digitalWrite(xbsp, LOW);
 }
 
 /**
@@ -460,9 +472,31 @@ int enProtocal1Start(unsigned long interval)
   }
 }
 /**
- * 
+ *  used for activating or deactivating components
  */
-int enProtocal2()
+int enProtocal2(int command)
 {
-  
+  if(command == 1)//if 1 turn on
+  {
+    lcd.display();//turn lcd on
+    digitalWrite(xbsp, LOW);
+    return 1;
+  }
+  else if(command == 0)//if zero shut off
+  {
+    //we need to shut off the GPS, radio, and LCD screen.
+    //turn off LCD
+    lcd.noDisplay();
+    //set GPS to low power mode
+    //set the radio to sleep
+    digitalWrite(xbsp, HIGH);
+    return 0;
+  }
+}
+/**
+* Set up energy protocal 2 to begin
+*/
+int enProtocal2Start()
+{
+  return 0;
 }
