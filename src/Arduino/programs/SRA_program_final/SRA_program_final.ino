@@ -399,6 +399,7 @@ void checkpwCT()
     }
     else if (p2Counter == 3 && !enProt1F)//if we are not running protocol 1
     {
+      enProt2F = true;
       enProtocal2Start();
     }
   }
@@ -498,5 +499,6 @@ int enProtocal2(int command)
 */
 int enProtocal2Start()
 {
+  enProtocal2(0); //turn it off
   return 0;
 }
